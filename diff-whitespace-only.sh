@@ -26,9 +26,18 @@ numslashes=$(dirname "$tempfile1" | sed 's/[^\/]//g' | wc -c | tr -d " ")
 # Derived from: Add only non-whitespace changes
 # https://stackoverflow.com/q/3515597/411282
 
-git diff -U0 -w --no-color "$tempfile1" "$tempfile2" \
-    | git apply -p"$numslashes"  --directory "$tempdir"  -v --unsafe-paths  --unidiff-zero --ignore-space-change -
 
+# Apply only if there are non-ws differences
+if ! git diff --quiet -U0 -w -b --ignore-blank-lines "$tempfile1" "$tempfile2"
+then
+    git diff -U0 -w -b --ignore-blank-lines --no-color "$tempfile1" "$tempfile2" \
+	| git apply -p"$numslashes"  --directory "$tempdir" \
+	      --whitespace=nowarn  -v --unsafe-paths  --unidiff-zero --ignore-space-change - \
+	      >& /dev/null
+else
+    # If there's no non-ws diff, still need to overwrite to file2 where it's expected.
+    cp "$tempfile1" "$tempfile2"
+fi
 
 # Now diff "old + NON-whitespace diffs" with "new" to get just the
 # whitespace diffs.
