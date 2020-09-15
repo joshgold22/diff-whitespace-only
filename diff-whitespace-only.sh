@@ -1,5 +1,6 @@
 #!/bin/bash
 # diff-whitespace-only file1 file2
+# diff-whitespace-only <(command...) <(command...)
 
 if [[ $# -ne 2 ]]; then
    echo "Usage: diff-whitespace-only file1 file2"
@@ -11,9 +12,11 @@ fi
 # See: https://stackoverflow.com/a/42918/411282
 tempfile1=$(perl -MCwd -le 'print Cwd::abs_path(shift)' $(mktemp -t diff-ws))
 tempfile2=$(perl -MCwd -le 'print Cwd::abs_path(shift)' $(mktemp -t diff-ws))
+tempfile3=$(perl -MCwd -le 'print Cwd::abs_path(shift)' $(mktemp -t diff-ws))
 
-cp "$1" "$tempfile1"
-cp "$2" "$tempfile2"
+cat "$1" > "$tempfile1"
+cat "$2" > "$tempfile2"
+cp "$tempfile2" "$tempfile3"
 
 
 # Had trouble in git apply with -p0 (kept the "a/b") and -p1 (stripped the
@@ -42,4 +45,5 @@ fi
 # Now diff "old + NON-whitespace diffs" with "new" to get just the
 # whitespace diffs.
 
-git diff "$tempfile2" "$2"
+git diff "$tempfile2" "$tempfile3"
+#diff "$tempfile2" "$tempfile3"
